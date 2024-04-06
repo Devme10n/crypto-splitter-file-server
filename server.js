@@ -1,6 +1,16 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fsp = require('fs').promises;
+
+//=================================================================
+const dotenv_path = path.join(process.cwd(), './.env');
+const dotenv = require('dotenv').config({
+  path: dotenv_path
+});
+if (dotenv.error) throw dotenv.error;
+//=================================================================
+
 const app = express();
 const port = 4000; // 서버 포트 번호
 
@@ -26,6 +36,49 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+/**
+ * 임시 디렉토리 확인 및 생성
+ * @description 주어진 경로에 폴더가 존재하지 않으면 생성. 이미 존재하는 경우, 내용을 비우고 다시 생성.
+ * @param {...string} paths 생성하거나 확인할 임시 폴더 경로들
+ */
+async function ensureDirectories(...paths) {
+  for (const tempPath of paths) {
+      try {
+          // 디렉토리 존재 여부 확인
+          await fsp.access(tempPath);
+          console.log(`디렉토리 존재함: ${tempPath}`);
+          
+          // // 디렉토리가 존재하면 삭제
+          // await fsp.rm(tempPath, { recursive: true });
+          // console.log(`디렉토리 삭제됨: ${tempPath}`);
+      } catch (error) {
+          if (error.code !== 'ENOENT') {
+              // ENOENT 이외의 오류는 예상하지 못한 오류이므로, 로그를 남기고 예외를 다시 던짐
+              console.error(`디렉토리 확인 중 오류 발생: ${error.message}`);
+              throw error;
+          }
+      }
+      try {
+          // 임시 디렉토리 생성
+          await fsp.mkdir(tempPath);
+          console.log(`디렉토리 생성됨: ${tempPath}`);
+      } catch (error) {
+          console.error(`디렉토리 처리 중 오류 발생: ${error.message}`);
+          throw error;
+      }
+  }
+}
+
+// 서버 시작 전에 임시 디렉토리 확인 및 생성
+(async () => {
+  try {
+    await ensureDirectories('./uploads');
+  } catch (error) {
+    console.error(`폴더 생성 실패: ${error}`);
+    process.exit(1);
+  }
+})();
 
 // 파일 업로드를 위한 라우트 설정. 'file'은 폼 데이터의 키 값이어야 합니다.
 app.post('/upload', upload.single('file'), (req, res, next) => {
@@ -60,8 +113,8 @@ app.post('/download', (req, res) => {
 });
 
 // 서버 시작
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running at http://localhost:${process.env.PORT}`);
 });
 
 // ##########################################################################################
