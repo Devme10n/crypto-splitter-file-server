@@ -4,15 +4,15 @@ const path = require('path');
 const fsp = require('fs').promises;
 
 //=================================================================
-const dotenv_path = path.join(process.cwd(), './.env');
-const dotenv = require('dotenv').config({
-  path: dotenv_path
-});
-if (dotenv.error) throw dotenv.error;
+// const dotenv_path = path.join(process.cwd(), './.env');
+// const dotenv = require('dotenv').config({
+//   path: dotenv_path
+// });
+// if (dotenv.error) throw dotenv.error;
 //=================================================================
 
 const app = express();
-const port = 4000; // 서버 포트 번호
+// const port = 8500; // 서버 포트 번호
 
 app.use(express.json()); // JSON 파싱을 위한 미들웨어 설정
 app.use(express.urlencoded({ extended: true })); // URL 인코딩을 위한 미들웨어 설정
@@ -44,29 +44,30 @@ const upload = multer({ storage: storage });
  */
 async function ensureDirectories(...paths) {
   for (const tempPath of paths) {
-      try {
-          // 디렉토리 존재 여부 확인
-          await fsp.access(tempPath);
-          console.log(`디렉토리 존재함: ${tempPath}`);
-          
-          // // 디렉토리가 존재하면 삭제
-          // await fsp.rm(tempPath, { recursive: true });
-          // console.log(`디렉토리 삭제됨: ${tempPath}`);
-      } catch (error) {
-          if (error.code !== 'ENOENT') {
-              // ENOENT 이외의 오류는 예상하지 못한 오류이므로, 로그를 남기고 예외를 다시 던짐
-              console.error(`디렉토리 확인 중 오류 발생: ${error.message}`);
-              throw error;
-          }
+    try {
+      // 디렉토리 존재 여부 확인
+      await fsp.access(tempPath);
+      console.log(`디렉토리 존재함: ${tempPath}`);
+      continue; // 디렉토리가 이미 존재하면 다음 경로로 이동
+
+      // // 디렉토리가 존재하면 삭제
+      // await fsp.rm(tempPath, { recursive: true });
+      // console.log(`디렉토리 삭제됨: ${tempPath}`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        // ENOENT 이외의 오류는 예상하지 못한 오류이므로, 로그를 남기고 예외를 다시 던짐
+        console.error(`디렉토리 확인 중 오류 발생: ${error.message}`);
+        throw error;
       }
-      try {
-          // 임시 디렉토리 생성
-          await fsp.mkdir(tempPath);
-          console.log(`디렉토리 생성됨: ${tempPath}`);
-      } catch (error) {
-          console.error(`디렉토리 처리 중 오류 발생: ${error.message}`);
-          throw error;
-      }
+    }
+    try {
+      // 임시 디렉토리 생성
+      await fsp.mkdir(tempPath);
+      console.log(`디렉토리 생성됨: ${tempPath}`);
+    } catch (error) {
+      console.error(`디렉토리 처리 중 오류 발생: ${error.message}`);
+      throw error;
+    }
   }
 }
 
