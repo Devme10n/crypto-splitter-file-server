@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fsp = require('fs').promises;
+require('dotenv').config();
 
 //=================================================================
 // const dotenv_path = path.join(process.cwd(), './.env');
